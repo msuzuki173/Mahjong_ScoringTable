@@ -4,38 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>麻雀スコア管理</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 80%;
-            margin-bottom: 20px;
-        }
-
-        th, td {
-            border: 1px solid #dddddd;
-            text-align: center;
-            padding: 8px;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        input {
-            width: 60px;
-        }
-
-        .error {
-            background-color: red;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/reset.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body onload="restoreData()">
 <h1>麻雀スコア管理</h1>
 <div id="tableContainer"></div>
 
-<button onclick="addPlayer()">プレイヤーを追加</button>
-<button onclick="addRound()">回数を追加</button>
+<button onclick="addPlayer(); saveChanges()">プレイヤーを追加</button>
+<button onclick="addRound(); saveChanges()">回数を追加</button>
+<button onclick="saveChanges()">保存</button>
 
 <script>
     let numPlayers = 4; // 初期のプレイヤー数
@@ -48,14 +26,14 @@
         let html = '<table id="scoreTable">';
         html += '<tr><th>回数</th>';
         for (let i = 0; i < numPlayers; i++) {
-            html += `<th>プレイヤー${i + 1}</th>`;
+            html += `<th class="prayersCell"><input type="text" placeholder="プレイヤー${i + 1}"></th>`;
         }
         html += '</tr>';
 
         for (let i = 0; i < numRounds; i++) {
             html += `<tr id="round${i + 1}"><td>${i + 1}</td>`;
             for (let j = 0; j < numPlayers; j++) {
-                html += `<td><input type="number" class="scoreInput" oninput="checkSum('round${i + 1}')"></td>`;
+                html += `<td class="scoreCell"><input type="number" class="scoreInput" oninput="checkSum('round${i + 1}'); saveChanges()"></td>`;
             }
             html += '</tr>';
         }
@@ -100,7 +78,7 @@
         calculateSubtotal();
     }
 
-    // 小計を計算する関数
+    // 小計
     function calculateSubtotal() {
         let subtotalRow = document.getElementById('subtotalRow');
         let inputs = document.querySelectorAll('.scoreInput');
@@ -117,6 +95,34 @@
             html += `<td>${subtotals[i]}</td>`;
         }
         subtotalRow.innerHTML = html;
+    }
+
+    // 変更内容を保存
+    function saveChanges() {
+        let tableData = [];
+        for (let i = 1; i <= numRounds; i++) {
+            let rowData = [];
+            for (let j = 1; j <= numPlayers; j++) {
+                let cell = document.querySelector(`#round${i} .scoreCell:nth-child(${j + 1}) input`);
+                rowData.push(cell.value);
+            }
+            tableData.push(rowData);
+        }
+        localStorage.setItem('scoreTableData', JSON.stringify(tableData));
+    }
+
+    // ページの読み込み時 保存データを復元
+    function restoreData() {
+        let savedData = localStorage.getItem('scoreTableData');
+        if (savedData) {
+            let tableData = JSON.parse(savedData);
+            for (let i = 0; i < tableData.length; i++) {
+                let rowData = tableData[i];
+                for (let j = 0; j < rowData.length; j++) {
+                    updateCell(`round${i + 1}`, j, rowData[j]);
+                }
+            }
+        }
     }
 </script>
 
