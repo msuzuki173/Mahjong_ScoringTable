@@ -26,14 +26,14 @@
         let html = '<table id="scoreTable">';
         html += '<tr><th>回数</th>';
         for (let i = 0; i < numPlayers; i++) {
-            html += `<th class="prayersCell"><input type="text" placeholder="プレイヤー${i + 1}"></th>`;
+            html += `<th class="prayersCell"><input type="text" value="" onchange="updateValue(this)" placeholder="プレイヤー${i + 1}"></th>`;
         }
         html += '</tr>';
 
         for (let i = 0; i < numRounds; i++) {
             html += `<tr id="round${i + 1}"><td>${i + 1}</td>`;
             for (let j = 0; j < numPlayers; j++) {
-                html += `<td class="scoreCell"><input type="number" class="scoreInput" oninput="checkSum('round${i + 1}'); saveChanges()"></td>`;
+                html += `<td class="scoreCell"><input type="number" value="" class="scoreInput" onchange="updateValue(this)" oninput="checkSum('round${i + 1}');"></td>`;
             }
             html += '</tr>';
         }
@@ -45,6 +45,11 @@
         html += '</table>';
         tableContainer.innerHTML = html;
         return document.getElementById('scoreTable');
+    }
+
+    // インプットの値を即座に変更
+    function updateValue(element) {
+        element.setAttribute('value', element.value);
     }
 
     // プレイヤーを追加
@@ -99,31 +104,33 @@
 
     // 変更内容を保存
     function saveChanges() {
-        let tableData = [];
-        for (let i = 1; i <= numRounds; i++) {
-            let rowData = [];
-            for (let j = 1; j <= numPlayers; j++) {
-                let cell = document.querySelector(`#round${i} .scoreCell:nth-child(${j + 1}) input`);
-                rowData.push(cell.value);
-            }
-            tableData.push(rowData);
-        }
-        localStorage.setItem('scoreTableData', JSON.stringify(tableData));
+        // tableContainerのHTMLを取得
+        let tableHtml = document.getElementById('tableContainer').innerHTML;
+        // 取得したHTMLをローカルストレージに保存
+        localStorage.setItem('savedTableHtml', tableHtml);
     }
 
     // ページの読み込み時 保存データを復元
     function restoreData() {
-        let savedData = localStorage.getItem('scoreTableData');
-        if (savedData) {
-            let tableData = JSON.parse(savedData);
-            for (let i = 0; i < tableData.length; i++) {
-                let rowData = tableData[i];
-                for (let j = 0; j < rowData.length; j++) {
-                    updateCell(`round${i + 1}`, j, rowData[j]);
+        // ローカルストレージから保存されたHTMLを取得
+        let savedTableHtml = localStorage.getItem('savedTableHtml');
+        // 保存されたHTMLがあれば、テーブルを上書き
+        if (savedTableHtml) {
+            document.getElementById('tableContainer').innerHTML = savedTableHtml;
+
+            // 保存された各入力要素の値を設定
+            let inputs = document.querySelectorAll('#tableContainer input');
+            inputs.forEach(input => {
+                let id = input.getAttribute('id');
+                let value = localStorage.getItem(id); // idをキーにしてローカルストレージから値を取得
+                if (value !== null) {
+                    input.value = value;
                 }
-            }
+            });
         }
     }
+    // リロード時restoreData呼び出す
+    window.onload = restoreData;
 </script>
 
 </body>
